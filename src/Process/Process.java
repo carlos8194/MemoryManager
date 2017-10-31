@@ -13,6 +13,11 @@ import java.util.List;
 public class Process implements Runnable {
 
     /**
+     * The unique identifier of the process
+     */
+    private int processId;
+
+    /**
      * Each process has three CPU registers
      */
     private int r1, r2, r3;
@@ -20,22 +25,12 @@ public class Process implements Runnable {
     /**
      * A queue with the instructions to execute
      */
-    List<Instruction> toExecute;
+    private List<Instruction> toExecute;
 
     /**
      * A pointer to memManager to access RAM and sec
      */
     private MemManager manager;
-
-    /**
-     * To know if the current process has some pages in RAM
-     */
-    private Hashtable<Integer, Integer> pageTableRAM;
-
-    /**
-     * To know the direction for all pages in sec memory
-     */
-    private Hashtable<Integer, Integer> pageTableSec;
 
     /*
      * A compiler required to parse the file and get the List of instructions
@@ -51,13 +46,14 @@ public class Process implements Runnable {
      * The constructor
      * @param nameOfFile the name of file with the instructions
      * @param manager the reference to the memory manager
+     * @param compiler
+     * @param id the unique identifier for the current process
      */
-    Process(String nameOfFile, MemManager manager, Compiler compiler){
+    Process(String nameOfFile, MemManager manager, Compiler compiler, int id){
         this.manager = manager;
         this.compiler = compiler;
-        this.pageTableRAM = new Hashtable<>();
-        this.pageTableSec = new Hashtable<>();
         this.fileName = nameOfFile;
+        this.processId = id;
     }
 
     private void executeInstruction(Instruction instruction){
