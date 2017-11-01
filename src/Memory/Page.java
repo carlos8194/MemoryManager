@@ -28,6 +28,14 @@ public class Page {
 
     /**
      *
+     * @return
+     */
+    public int getPageNumber() {
+        return pageNumber;
+    }
+
+    /**
+     *
      * @param offset
      * @return
      */

@@ -110,6 +110,5 @@ public class Memory {
         //end of the synchronized zone
         this.synchronize.release();
     }
-
 }
 

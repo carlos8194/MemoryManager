@@ -4,7 +4,6 @@ import javafx.util.Pair;
 
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.Map;
 
 /**
  * Created by carlos on 31/10/17.
@@ -75,10 +74,10 @@ public class MemManager {
     }
 
     /**
-     *
-     * @param processId
-     * @param logicalAddress
-     * @param value
+     * Allows to store a value in memory, translating a logical address to real address in memory
+     * @param processId the process to call this function
+     * @param logicalAddress the logical address to store the value
+     * @param value the value to save
      */
     public void store(int processId,int logicalAddress,int value){
         if(!this.pageTableRAM.containsKey(processId)){
@@ -90,35 +89,57 @@ public class MemManager {
         int page = this.translateDecimalAddress(logicalAddress).getKey();
         int offset = this.translateDecimalAddress(logicalAddress).getValue();
         //get the pageTable associated with the process
-        Hashtable<Integer,Integer> pageTable = this.pageTableRAM.get(processId);
+        Hashtable<Integer,Integer> pageTableRam = this.pageTableRAM.get(processId);
         //if the page exist in RAM, only store the value
-        if(pageTable.containsKey(page)){
+        if(pageTableRam.containsKey(page)){
             try{
-                this.RAM.getPage(pageTable.get(page)).saveValue(offset,value);
+                this.RAM.getPage(pageTableRam.get(page)).saveValue(offset,value);
             } catch (Exception e){
                 //improve the exception handle
             }
         } else{
             //if the page is not in RAM there are two cases:
-            //the RAM has unused space, or the RAM does not have unused space
+            //the RAM has free space, or the RAM is full
             try{
                 if(this.RAM.availableSpace()){
-                    pageTable.put(page,this.RAM.savePage(new Page(8/this.numberOfPages)));
-                    this.RAM.getPage(pageTable.get(page)).saveValue(offset,value);
+                    pageTableRam.put(page,this.RAM.savePage(new Page(8/this.numberOfPages)));
+                    this.RAM.getPage(pageTableRam.get(page)).saveValue(offset,value);
                 } else{
                     //the heuristic to replace pages will change, for now suppose always change the first direction
-                    //get the pageTable associated with the process
+
+                    //get the pageTable to secondary memory associated with the process
                     Hashtable<Integer,Integer> pageTableSec = this.pageTableSec.get(processId);
+
+                    Page toInsertInRam;
                     //if the page exist in secondary memory, we need to swap with other page in RAM
-                    if(pageTableSec.containsKey(page)){
-
-                    } else{
-
+                    if(pageTableSec.containsKey(page)) {
+                        toInsertInRam = this.secondStorage.getPage(pageTableSec.get(page));
+                    } else {
+                        //else, create the new page to insert in RAM
+                        toInsertInRam = new Page(8/this.numberOfPages);
+                        toInsertInRam.saveValue(offset,value);
+                    }
+                    //get the page to remove from RAM
+                    Page toInsertInSec = this.RAM.getPage(1); //** the page to replace will change
+                    this.RAM.replacePage(1,toInsertInRam);//** replacement
+                    //remove the reference in pageTable RAM
+                    pageTableRam.remove(toInsertInSec.getPageNumber());
+                    //create new reference in pageTable RAM
+                    pageTableRam.put(page,1);//**
+                    //finally, store in sec memory the page removed from RAM
+                    if(pageTableSec.containsKey(toInsertInSec.getPageNumber())){
+                        this.secondStorage.replacePage(pageTableSec.get(page),toInsertInSec);//*
+                    }else{
+                        pageTableSec.put(toInsertInSec.getPageNumber(),this.secondStorage.savePage(toInsertInSec));
                     }
                 }
             } catch (Exception e){
 
             }
         }
+    }
+
+    public void load(int processId,int logicalAddress,int value){
+
     }
 }
