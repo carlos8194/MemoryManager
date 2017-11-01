@@ -39,40 +39,63 @@ public class Compiler {
     private Instruction readInstruction(String line) {
         int index = 0;
         Pair pair = this.readPair(line, index);
+        if (pair == null){
+            this.syntaxError();
+        }
         String instr = pair.string;
         index = pair.index;
         Instruction.Operation operation;
-        if (instr.equalsIgnoreCase("add"))          operation = Instruction.Operation.ADD;
+        boolean isAdd = false;
+        if (instr.equalsIgnoreCase("add")){
+            operation = Instruction.Operation.ADD;
+            isAdd = true;
+        }
         else if (instr.equalsIgnoreCase("load"))    operation = Instruction.Operation.LOAD;
         else if (instr.equalsIgnoreCase("store"))   operation = Instruction.Operation.STORE;
         else                                           operation = Instruction.Operation.LOADI;
 
-        // Sacar origen
-        pair = this.readPair(line, index);
-        String origin = pair.string;
-        index = pair.index;
-        if (origin.charAt(0) == 'r' || origin.charAt(0) == 'R')
-            origin = origin.substring(1, origin.length() );
-        int instOrigin = Integer.parseInt(origin);
+        int op1 = 1, op2 = 1, op3 = 1;
+        for (int i = 1; i < 4; i++) {
+            if (i == 3 && !isAdd)
+                break;
+            pair = this.readPair(line, index);
+            if (pair == null){
+                this.syntaxError();
+            }
+            String opStr = pair.string;
+            index = pair.index;
+            if (opStr.charAt(0) == 'r' || opStr.charAt(0) == 'R')
+                opStr = opStr.substring(1, opStr.length() );
+            switch (i){
+                case 1: op1 = Integer.parseInt(opStr);
+                    break;
+                case 2: op2 = Integer.parseInt(opStr);
+                    break;
+                default:op3 = Integer.parseInt(opStr);
+                    break;
+            }
+        }
 
-        // Sacar destino
-        pair = this.readPair(line, index);
-        String destiny = pair.string;
-        if (destiny.charAt(0) == 'r' || destiny.charAt(0) == 'R')
-            destiny = origin.substring(1, origin.length() );
-        int instDestiny = Integer.parseInt(destiny);
-
-        return new Instruction(operation, instOrigin, instDestiny);
+        return (isAdd) ? new Instruction(operation, op1, op2, op3)
+                : new Instruction(operation, op1, op2);
     }
 
     private Pair readPair(String line, int index){
-        while (line.charAt(index) == 32)
+        if (index >= line.length()) return null;
+        while (line.charAt(index) == 32) {
             index++; // Ignore whitespaces
+            if (index >= line.length()) return null;
+        }
         StringBuilder word = new StringBuilder();
         char c = line.charAt(index);
-        while (line.charAt(index++) != 32)
+        while (index < line.length() && line.charAt(index++) != 32)
             word.append(c);
         return new Pair(word.toString(), index);
+    }
+
+    private void syntaxError(){
+        System.out.println("Syntax error");
+        System.exit(-3);
     }
 
     private class Pair{

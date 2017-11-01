@@ -59,6 +59,7 @@ public class Process implements Runnable {
     private void executeInstruction(Instruction instruction){
         int origin = instruction.getOrigin();
         int destiny = instruction.getDestination();
+        int originD = instruction.getOriginD();
         switch (instruction.getOperation() ){
             case LOADI:
                 switch (destiny){
@@ -118,5 +119,8 @@ public class Process implements Runnable {
     public void run() {
         this.toExecute = compiler.compile(fileName);
         // Start here to execute instructions
+        for (Instruction instruction: this.toExecute) {
+            this.executeInstruction(instruction);
+        }
     }
 }

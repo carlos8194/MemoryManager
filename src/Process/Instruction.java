@@ -53,7 +53,7 @@ public class Instruction {
      * @param originD the origin of the value
      * @param destination the destination of the value
      */
-    Instruction(Operation operation, int origin, int originD, int destination){
+    Instruction(Operation operation, int destination, int origin, int originD){
         this.operation = operation;
         this.destination = destination;
         this.originD = originD;
