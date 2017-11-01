@@ -1,5 +1,4 @@
 package Memory;
-
 import java.util.HashMap;
 import java.util.Hashtable;
 
@@ -60,7 +59,7 @@ public class MemManager {
      * @param address the decimal address, value from 0 to 15
      * @return the corresponding page number and offset
      */
-    public Pair<Integer,Integer> translateDecimalAddress(int address){
+    private Pair<Integer,Integer> translateDecimalAddress(int address){
         switch (this.numberOfPages){
             case 2:
                 return new Pair<>((address/8),(address%8));
@@ -77,7 +76,7 @@ public class MemManager {
      * @param logicalAddress the logical address to store the value
      * @param value the value to save
      */
-    public void store(int processId,int logicalAddress,int value){
+    public synchronized void store(int processId,int logicalAddress,int value){
         try{
             if(!this.pageTableRAM.containsKey(processId)){
                 //that means the process has never accessed the manager
@@ -133,7 +132,7 @@ public class MemManager {
         }
     }
 
-    public int load(int processId,int logicalAddress) {
+    public synchronized int load(int processId,int logicalAddress) {
         try {
             if (!this.pageTableRAM.containsKey(processId)) {
                 //that means the process has never accessed the manager
