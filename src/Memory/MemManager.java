@@ -1,7 +1,5 @@
 package Memory;
 
-import javafx.util.Pair;
-
 import java.util.HashMap;
 import java.util.Hashtable;
 
@@ -182,6 +180,24 @@ public class MemManager {
             }
         } catch (Exception e){
 
+        }
+    }
+
+    private class Pair<K, V> {
+        K key;
+        V value;
+
+        private Pair(K k, V v){
+            key = k;
+            value = v;
+        }
+
+        private K getKey(){
+            return key;
+        }
+
+        private V getValue(){
+            return value;
         }
     }
 }

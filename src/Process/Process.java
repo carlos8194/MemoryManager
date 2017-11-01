@@ -118,6 +118,5 @@ public class Process implements Runnable {
     public void run() {
         this.toExecute = compiler.compile(fileName);
         // Start here to execute instructions
-
     }
 }
