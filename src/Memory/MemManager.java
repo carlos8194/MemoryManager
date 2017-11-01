@@ -80,66 +80,108 @@ public class MemManager {
      * @param value the value to save
      */
     public void store(int processId,int logicalAddress,int value){
-        if(!this.pageTableRAM.containsKey(processId)){
-            //that means the process has never accessed the manager
-            this.pageTableRAM.put(processId,new Hashtable<>());
-            this.pageTableSec.put(processId,new Hashtable<>());
-        }
-        //translate the address
-        int page = this.translateDecimalAddress(logicalAddress).getKey();
-        int offset = this.translateDecimalAddress(logicalAddress).getValue();
-        //get the pageTable associated with the process
-        Hashtable<Integer,Integer> pageTableRam = this.pageTableRAM.get(processId);
-        //if the page exist in RAM, only store the value
-        if(pageTableRam.containsKey(page)){
-            try{
-                this.RAM.getPage(pageTableRam.get(page)).saveValue(offset,value);
-            } catch (Exception e){
-                //improve the exception handle
+        try{
+            if(!this.pageTableRAM.containsKey(processId)){
+                //that means the process has never accessed the manager
+                this.pageTableRAM.put(processId,new Hashtable<>());
+                this.pageTableSec.put(processId,new Hashtable<>());
             }
-        } else{
-            //if the page is not in RAM there are two cases:
-            //the RAM has free space, or the RAM is full
-            try{
-                if(this.RAM.availableSpace()){
-                    pageTableRam.put(page,this.RAM.savePage(new Page(8/this.numberOfPages)));
-                    this.RAM.getPage(pageTableRam.get(page)).saveValue(offset,value);
-                } else{
+            //translate the address
+            int page = this.translateDecimalAddress(logicalAddress).getKey();
+            int offset = this.translateDecimalAddress(logicalAddress).getValue();
+            //get the pageTable associated with the process
+            Hashtable<Integer,Integer> pageTableRam = this.pageTableRAM.get(processId);
+            //if the page exist in RAM, only store the value
+            if(pageTableRam.containsKey(page)){
+                this.RAM.getPage(pageTableRam.get(page)).saveValue(offset,value);
+            } else {
+                //if the page is not in RAM there are two cases:
+                //the RAM has free space, or the RAM is full
+                if (this.RAM.availableSpace()) {
+                    pageTableRam.put(page, this.RAM.savePage(new Page(8 / this.numberOfPages)));
+                    this.RAM.getPage(pageTableRam.get(page)).saveValue(offset, value);
+                } else {
                     //the heuristic to replace pages will change, for now suppose always change the first direction
 
                     //get the pageTable to secondary memory associated with the process
-                    Hashtable<Integer,Integer> pageTableSec = this.pageTableSec.get(processId);
+                    Hashtable<Integer, Integer> pageTableSec = this.pageTableSec.get(processId);
 
                     Page toInsertInRam;
                     //if the page exist in secondary memory, we need to swap with other page in RAM
-                    if(pageTableSec.containsKey(page)) {
+                    if (pageTableSec.containsKey(page)) {
                         toInsertInRam = this.secondStorage.getPage(pageTableSec.get(page));
                     } else {
                         //else, create the new page to insert in RAM
-                        toInsertInRam = new Page(8/this.numberOfPages);
-                        toInsertInRam.saveValue(offset,value);
+                        toInsertInRam = new Page(8 / this.numberOfPages);
+                        toInsertInRam.saveValue(offset, value);
                     }
                     //get the page to remove from RAM
                     Page toInsertInSec = this.RAM.getPage(1); //** the page to replace will change
-                    this.RAM.replacePage(1,toInsertInRam);//** replacement
+                    this.RAM.replacePage(1, toInsertInRam);//** replacement
                     //remove the reference in pageTable RAM
                     pageTableRam.remove(toInsertInSec.getPageNumber());
                     //create new reference in pageTable RAM
-                    pageTableRam.put(page,1);//**
+                    pageTableRam.put(page, 1);//**
                     //finally, store in sec memory the page removed from RAM
-                    if(pageTableSec.containsKey(toInsertInSec.getPageNumber())){
-                        this.secondStorage.replacePage(pageTableSec.get(page),toInsertInSec);//*
-                    }else{
-                        pageTableSec.put(toInsertInSec.getPageNumber(),this.secondStorage.savePage(toInsertInSec));
+                    if (pageTableSec.containsKey(toInsertInSec.getPageNumber())) {
+                        this.secondStorage.replacePage(pageTableSec.get(page), toInsertInSec);//*
+                    } else {
+                        pageTableSec.put(toInsertInSec.getPageNumber(), this.secondStorage.savePage(toInsertInSec));
                     }
                 }
-            } catch (Exception e){
-
             }
+        } catch (Exception e){
+            //improve the handle of exceptions
         }
     }
 
-    public void load(int processId,int logicalAddress,int value){
+    public int load(int processId,int logicalAddress) {
+        try {
+            if (!this.pageTableRAM.containsKey(processId)) {
+                //that means the process has never accessed the manager
+                this.pageTableRAM.put(processId, new Hashtable<>());
+                this.pageTableSec.put(processId, new Hashtable<>());
+                throw new Exception(); //the process does not have values stored
+            } else {
+                int page = this.translateDecimalAddress(logicalAddress).getKey();
+                int offset = this.translateDecimalAddress(logicalAddress).getValue();
+                Hashtable<Integer, Integer> pageTableRAM = this.pageTableRAM.get(processId);
+                //the worst case, the page is not in RAM
+                if (!pageTableRAM.containsKey(page)) {
+                    //if the page exist in secondary memory, we need to swap with other page in RAM
+                    if (this.pageTableSec.get(processId).containsKey(page)) {
+                        this.loadPageInRAM(processId,page);
+                    } else{
+                        throw new Exception(); //the process does not have values stored
+                    }
+                }
+                return this.RAM.getPage(pageTableRAM.get(page)).getValue(offset);
+            }
+        } catch (Exception e) {
+            System.out.println("Error loading data, please try again");
+            return -1;
+        }
+    }
 
+    private void loadPageInRAM(int processId , int numberOfPage){
+        try{
+            Hashtable<Integer,Integer> pageTableSec = this.pageTableSec.get(processId);
+            Page toInsertInRam = this.secondStorage.getPage(pageTableSec.get(numberOfPage));
+            //get the page to remove from RAM
+            Page toInsertInSec = this.RAM.getPage(1); //** the page to replace will change
+            this.RAM.replacePage(1, toInsertInRam);//** replacement
+            //remove the reference in pageTable RAM
+            this.pageTableRAM.get(processId).remove(toInsertInSec.getPageNumber());
+            //create new reference in pageTable RAM
+            this.pageTableRAM.get(processId).put(numberOfPage, 1);//**
+            //finally, store in sec memory the page removed from RAM
+            if (pageTableSec.containsKey(toInsertInSec.getPageNumber())) {
+                this.secondStorage.replacePage(pageTableSec.get(numberOfPage), toInsertInSec);//*
+            } else {
+                pageTableSec.put(toInsertInSec.getPageNumber(), this.secondStorage.savePage(toInsertInSec));
+            }
+        } catch (Exception e){
+
+        }
     }
 }
