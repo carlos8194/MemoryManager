@@ -139,13 +139,32 @@ public class MemManager {
     public synchronized int load(int processId,int logicalAddress) {
         try {
             this.checkProcess(processId);
-            <Integer,Integer> address = this.translateDecimalAddress(logicalAddress);//translate the address
+            Pair<Integer, Integer> address = this.translateDecimalAddress(logicalAddress);//translate the address
             //if RAM constains the page, return the value
-            if(this.pageTableRAM.get(processId).containsKey(address.getPage())){
+            if (this.pageTableRAM.get(processId).containsKey(address.getPage())) {
                 return this.RAM.getPage(this.pageTableRAM.get(processId).get(address.getPage())).getValue(address.getOffset());
-            }else{
-                this.pageTableSec.get(processId).containsKey(address.getPage())
+            } else {
+                if(this.pageTableSec.get(processId).containsKey(address.getPage())){
+                    //do swap here
+                    int indexToReplace = this.getIndexToReplace(); //use heuristic FIFO, RANDOM, ETC...
+                    Page toSecStorage = this.RAM.replacePage(indexToReplace,this.secondStorage.getPage(this.pageTableSec.get(processId).get(address.getPage())));
+                    //update two pageTables
+                    this.pageTableRAM.get(processId).put(address.getPage(),indexToReplace);
+                    this.pageTableRAM.get(toSecStorage.getProcessId()).remove(toSecStorage.getPageNumber());
+                    if(this.pageTableSec.get(toSecStorage.getProcessId()).containsKey(toSecStorage.getPageNumber())){
+                        this.secondStorage.replacePage(this.pageTableSec.get(toSecStorage.getProcessId()).get(toSecStorage.getPageNumber()),toSecStorage);
+                    }else{
+                        this.pageTableSec.get(toSecStorage.getProcessId()).put(toSecStorage.getPageNumber(),this.secondStorage.savePage(toSecStorage));
+                    }
+                    return this.RAM.getPage(this.pageTableRAM.get(processId).get(address.getPage())).getValue(address.getOffset());
+                }else{
+                    return 0;
+                }
             }
+        } catch (Exception e){
+            System.out.println("Error loading data");
+            return 0;
+        }
     }
 
     /**
@@ -157,8 +176,8 @@ public class MemManager {
         /**
          * First for this pair
          */
-
         K page;
+
         /**
          * Second for this pair
          */
@@ -178,7 +197,7 @@ public class MemManager {
          * Allows get the key
          * @return the key in this pair
          */
-        K getPage(){
+        private K getPage(){
             return page;
         }
 
@@ -186,7 +205,7 @@ public class MemManager {
          * Allows get the value
          * @return the value in this pair
          */
-        V getOffset(){
+        private V getOffset(){
             return offset;
         }
     }
