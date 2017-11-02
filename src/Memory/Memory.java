@@ -1,5 +1,4 @@
 package Memory;
-
 import java.util.Hashtable;
 
 /**
@@ -35,9 +34,9 @@ public class Memory {
 
     /**
      * Allows to know the total of pages that the memory might save
-     * @return the total of pages (size of memory)
+     * @return the total of pages (max quantity of pages in memory)
      */
-    public synchronized int getSize() throws Exception{
+    public synchronized int getSize(){
         return size;
     }
 
@@ -45,7 +44,7 @@ public class Memory {
      * To know if there are some available space in memory
      * @return true if there are, false otherwise
      */
-    public synchronized boolean availableSpace() throws Exception{
+    public synchronized boolean availableSpace(){
         return this.availableSpace > 0;
     }
 
@@ -53,31 +52,31 @@ public class Memory {
      * Allows to save a new page in memory if there are available space
      * use the method availableSpace to control that
      * @param page the page to be saved
-     * @return the address assigned to the page
+     * @return the index assigned to the page
      */
-    public synchronized int savePage(Page page) throws Exception{
-        this.memoryCells.put(this.size - this.availableSpace,page);
-        --availableSpace;
-        return availableSpace+1;
+    public synchronized int savePage(Page page){
+        int index = this.getSize() - this.availableSpace;
+        this.memoryCells.put(index,page);
+        --this.availableSpace;
+        return index;
     }
 
     /**
-     * Allows to get the specific page associated with a given address
-     * @param address the index of the page
-     * @return the page saved in that address
-     * @throws Exception
+     * Allows to get the specific page associated with a given index
+     * @param index the index of the page
+     * @return the page saved in that index
      */
-    public synchronized Page getPage(int address) throws Exception{
-        return this.memoryCells.get(address);
+    public synchronized Page getPage(int index){
+        return this.memoryCells.get(index);
     }
 
     /**
      * Allows to replace a page that already exist
-     * @param address the index of the page
+     * @param index the index of the page
      * @param page the new page to be saved
+     * @return the page of the index in this memory
      */
-    public synchronized void replacePage(int address,Page page) throws Exception{
-        this.memoryCells.replace(address,page);
+    public synchronized Page replacePage(int index,Page page){
+        return this.memoryCells.put(index,page);
     }
 }
-
