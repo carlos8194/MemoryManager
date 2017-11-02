@@ -6,10 +6,17 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Created by carlos on 31/10/17.
+ * A simple class that represents a compiler, which is in charge of parsing assembly code
+ * and returning back a list of instructions or detecting syntactic errors and if possible give
+ * feedback about them.
  */
 public class Compiler {
 
+    /**
+     *
+     * @param fileName: file path where the file will be looked for.
+     * @return a list of the file lines.
+     */
     private List<String> readFromFile(String fileName) {
         List<String> instructions = new ArrayList<>();
         File file = new File(fileName);
@@ -28,6 +35,11 @@ public class Compiler {
         return instructions;
     }
 
+    /**
+     *
+     * @param fileName: the path where the file will be searched for.
+     * @return The instruction list of the assembly code.
+     */
     public List<Instruction> compile(String fileName) {
         List<String> fileLines = this.readFromFile(fileName);
         List<Instruction> instructionList = new ArrayList<>();
@@ -38,6 +50,11 @@ public class Compiler {
         return instructionList;
     }
 
+    /**
+     * A method that reads an instruction at a time.
+     * @param line: the line to be parsed.
+     * @return the instruction regarding the line.
+     */
     private Instruction readInstruction(String line) {
         int index = 0;
         Pair pair = this.readPair(line, index);
@@ -95,6 +112,13 @@ public class Compiler {
                 : new Instruction(operation, op1, op2);
     }
 
+    /**
+     * A method that searches a line from a starting position and identifies the next valid
+     * word and returns it along with the ending position where it stopped reading.
+     * @param line: the line to be parsed.
+     * @param index: starting position to begin searching.
+     * @return a Pair object that contains both the word and final index.
+     */
     private Pair readPair(String line, int index){
         if (index >= line.length()) return null;
         char c = line.charAt(index);
@@ -111,14 +135,22 @@ public class Compiler {
         return new Pair(word.toString(), index);
     }
 
+    /**
+     * A very simple method that displays a generic error message and quits the program in an
+     * error condition. Should be called only if an error state is reached.
+     */
     private void syntaxError(){
         System.out.println("Syntax error");
         System.exit(-3);
     }
 
+    /**
+     * A class that represents a pair of objects. Used only to overcome the difficulty of
+     * returning to objects at once, which is required in the readInstruction method.
+     */
     private class Pair{
-        String string;
-        int index;
+        String string; // Refers to the next word found.
+        int index; // Refers to the last index position analyzed.
 
         private Pair(String s, int index){
             this.string = s;
