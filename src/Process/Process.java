@@ -1,10 +1,8 @@
 package Process;
 
 import Memory.MemManager;
+import Process.Compiler;
 
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -49,7 +47,7 @@ public class Process implements Runnable {
      * @param compiler
      * @param id the unique identifier for the current process
      */
-    Process(String nameOfFile, MemManager manager, Compiler compiler, int id){
+    public Process(String nameOfFile, MemManager manager, Compiler compiler, int id){
         this.manager = manager;
         this.compiler = compiler;
         this.fileName = nameOfFile;
@@ -75,25 +73,91 @@ public class Process implements Runnable {
                 switch (destiny){
                     case 1:
                         switch (origin){
-                            case 1: r1 += r1;
+                            case 1:
+                                switch (originD){
+                                    case 1:
+                                        r1 = 2*r1;
+                                        break;
+                                    case 2:
+                                        r1 = r1 + r2;
+                                        break;
+                                    default:
+                                        r1 = r1 + r3;
+                                        break;
+                                }
                                 break;
-                            case 2: r1 += r2;
+                            case 2:
+                                switch (originD){
+                                    case 1:
+                                        r1 = r1 + r2;
+                                        break;
+                                    case 2:
+                                        r1 = 2*r2;
+                                        break;
+                                    default:
+                                        r1 = r2 + r3;
+                                     break;
+                                }
                                 break;
-                            default:r1 += r3;
+                            default:
+                                switch (originD){
+                                    case 1:
+                                        r1 = r1 + r3;
+                                        break;
+                                    case 2:
+                                         r1 = r2 + r3;
+                                         break;
+                                    default:
+                                        r1 = 2*r3;
+                                        break;
+                                }
                                 break;
                         }
                         break;
                     case 2:
                         switch (origin){
-                            case 1: r2 += r1;
+                            case 1:
+                                switch (originD){
+                                    case 1:
+                                        r2 = r1 + r1;
+                                        break;
+                                    case 2:
+                                        r2 = r1 + r2;
+                                        break;
+                                    default:
+                                        r2 = r1 + r3;
+                                        break;
+                                }
                                 break;
-                            case 2: r2 += r2;
+                            case 2:
+                                switch (originD){
+                                    case 1:
+                                        r2 = r2 + r1;
+                                        break;
+                                    case 2:
+                                        r2 = 2*r2;
+                                        break;
+                                    default:
+                                        r2 = r2 + r3;
+                                        break;
+                                }
                                 break;
-                            default:r2 += r3;
+                            default:
+                                switch (originD){
+                                    case 1:
+                                        r2 = r3 + r1;
+                                        break;
+                                    case 2:
+                                        r2 = r3 + r2;
+                                        break;
+                                    default:
+                                        r2 = 2*r3;
+                                        break;
+                                }
                                 break;
                         }
                         break;
-                    case 3:
+                    default:
                         switch (origin){
                             case 1: r3 += r1;
                                 break;

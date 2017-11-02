@@ -1,0 +1,14 @@
+loadi r3, 5
+loadi r2 , 6
+loadi r1, 2
+store 4 r3
+add r3, r2, r3
+store 3, r3
+add r1, r3, r2
+store 1, r1
+load r2, 4
+add r2, r1, r3
+load r1, 1
+load r3, 3
+add r2, r1, r3
+add r2, r3, r1

@@ -13,9 +13,11 @@ public class Compiler {
     private List<String> readFromFile(String fileName) {
         List<String> instructions = new ArrayList<>();
         File file = new File(fileName);
+        String line;
         try {
             BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
-            instructions.add(bufferedReader.readLine());
+            while ( (line = bufferedReader.readLine()) != null)
+            instructions.add(line);
         } catch (FileNotFoundException e) {
             System.out.println("File was not found");
             System.exit(-1);
@@ -54,8 +56,10 @@ public class Compiler {
         else if (instr.equalsIgnoreCase("store"))   operation = Instruction.Operation.STORE;
         else                                           operation = Instruction.Operation.LOADI;
 
+        boolean isReg;
         int op1 = 1, op2 = 1, op3 = 1;
         for (int i = 1; i < 4; i++) {
+            isReg = false;
             if (i == 3 && !isAdd)
                 break;
             pair = this.readPair(line, index);
@@ -64,15 +68,26 @@ public class Compiler {
             }
             String opStr = pair.string;
             index = pair.index;
-            if (opStr.charAt(0) == 'r' || opStr.charAt(0) == 'R')
-                opStr = opStr.substring(1, opStr.length() );
-            switch (i){
-                case 1: op1 = Integer.parseInt(opStr);
-                    break;
-                case 2: op2 = Integer.parseInt(opStr);
-                    break;
-                default:op3 = Integer.parseInt(opStr);
-                    break;
+            if (opStr.charAt(0) == 'r' || opStr.charAt(0) == 'R') {
+                opStr = opStr.substring(1, opStr.length());
+                isReg = true;
+            }
+            try {
+                int number = Integer.parseInt(opStr);
+                if (isReg && (number > 3 || number < 1)){
+                    System.out.println("Invalid register number!");
+                    this.syntaxError();
+                }
+                switch (i) {
+                    case 1: op1 = number;
+                        break;
+                    case 2: op2 = number;
+                        break;
+                    default:op3 = number;
+                        break;
+                }
+            }catch (NumberFormatException e){
+                this.syntaxError();
             }
         }
 
@@ -82,14 +97,17 @@ public class Compiler {
 
     private Pair readPair(String line, int index){
         if (index >= line.length()) return null;
-        while (line.charAt(index) == 32) {
-            index++; // Ignore whitespaces
-            if (index >= line.length()) return null;
+        char c = line.charAt(index);
+        while (c == 32 || c == ',') {
+            if ( (index + 1) >= line.length() )    return null;
+            c = line.charAt(++index); // Ignore whitespaces and commas
         }
         StringBuilder word = new StringBuilder();
-        char c = line.charAt(index);
-        while (index < line.length() && line.charAt(index++) != 32)
+        while (index < line.length() && c != 32 && c != ',') {
             word.append(c);
+            if ( (index + 1) >= line.length() )    break;
+            c = line.charAt(++index);
+        }
         return new Pair(word.toString(), index);
     }
 
