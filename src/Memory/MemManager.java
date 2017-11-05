@@ -12,9 +12,9 @@ public class MemManager {
      */
     public MemManager(int numberOfPages) {
         this.numberOfPages = numberOfPages;
-        this.memoryAcceses = 0; //this is the counter
-        this.RAM = new Memory(numberOfPages);
-        this.secondStorage = new Memory(numberOfPages);
+        this.totalOfFaults = 0; //this is the counter
+        this.RAM = new Memory(numberOfPages); //limited capacity
+        this.secondStorage = new Memory(1000); //infinite storage
         this.pageTableRAM = new HashMap<>();
         this.pageTableSec = new HashMap<>();
     }
@@ -32,7 +32,7 @@ public class MemManager {
     /**
      * The number of faults
      */
-    private int memoryAcceses;
+    private int totalOfFaults;
 
     /**
      * The memory configuration for addresses
@@ -85,6 +85,10 @@ public class MemManager {
         }
     }
 
+    /**
+     *
+     * @return
+     */
     private int getIndexToReplace(){
         return 1;
     }
@@ -97,36 +101,59 @@ public class MemManager {
      */
     public synchronized void store(int processId,int logicalAddress,int value){
         try{
-            this.checkProcess(processId); //checks if the process is new
-            Pair<Integer,Integer> address = this.translateDecimalAddress(logicalAddress);//translate the address
-            if(this.pageTableRAM.get(processId).containsKey(address.getPage())){//if the page exist in RAM, only store the value
+            this.checkProcess(processId); //checks if the process is new to register it
+            Pair<Integer,Integer> address = //get the corresponding page and offset, using the configuration
+                    this.translateDecimalAddress(logicalAddress);
+            //if the page exist in RAM, only store the value
+            if(this.pageTableRAM.get(processId).containsKey(address.getPage())){
                 this.RAM.getPage(this.pageTableRAM.get(processId).get(address.page)).saveValue(address.offset,value);
-            } else { //if the page is not in RAM there are two cases: the page is in secStorage or not
-                if(this.pageTableSec.get(processId).containsKey(address.getPage())){ //page is in secStorage
-                    //do swap here
-                    int indexToReplace = this.getIndexToReplace(); //use heuristic FIFO, RANDOM, ETC...
-                    Page toSecStorage = this.RAM.replacePage(indexToReplace,this.secondStorage.getPage(this.pageTableSec.get(processId).get(address.getPage())));
-                    //update two pageTables
-                    this.pageTableRAM.get(processId).put(address.getPage(),indexToReplace);
+            }
+            //if the page is not in RAM there are two cases: the page is in secStorage or not
+            else {
+                //case: page is in secStorage ==> do swap here
+                if(this.pageTableSec.get(processId).containsKey(address.getPage())) {
+                    int indexToReplace = //use heuristic FIFO, RANDOM, ETC...
+                            this.getIndexToReplace();
+                    Page toSecStorage = //replace the page and get it for insert to sec storage
+                            this.RAM.replacePage(indexToReplace, this.secondStorage.getPage(this.pageTableSec.get(processId).get(address.getPage())));
+                    ++this.totalOfFaults; //increase the statics
+                    // now update the two pageTables
+                    this.pageTableRAM.get(processId).put(address.getPage(), indexToReplace);
                     this.pageTableRAM.get(toSecStorage.getProcessId()).remove(toSecStorage.getPageNumber());
-                    if(this.pageTableSec.get(toSecStorage.getProcessId()).containsKey(toSecStorage.getPageNumber())){
-                        this.secondStorage.replacePage(this.pageTableSec.get(toSecStorage.getProcessId()).get(toSecStorage.getPageNumber()),toSecStorage);
-                    }else{
-                        this.pageTableSec.get(toSecStorage.getProcessId()).put(toSecStorage.getPageNumber(),this.secondStorage.savePage(toSecStorage));
+                    //stores the value
+                    this.RAM.getPage(this.pageTableRAM.get(processId).get(address.getPage())).saveValue(address.getOffset(), value);
+                    //if the page replaced exists in secStorage then update it
+                    if (this.pageTableSec.get(toSecStorage.getProcessId()).containsKey(toSecStorage.getPageNumber())) {
+                        this.secondStorage.replacePage(this.pageTableSec.get(toSecStorage.getProcessId()).get(toSecStorage.getPageNumber()), toSecStorage);
                     }
-                } else{ //the page is not in SecStorage
-                    if(this.RAM.availableSpace()){//the RAM has free space
+                    // else, create it on secStorage and update the corresponding pageTable
+                    else {
+                        this.pageTableSec.get(toSecStorage.getProcessId()).put(toSecStorage.getPageNumber(), this.secondStorage.savePage(toSecStorage));
+                    }
+                }
+                //the page is not in SecStorage ==> create new page and replace some other in RAM
+                else{
+                    //case: the RAM has free space, only add new page
+                    if(this.RAM.availableSpace()){
                         this.pageTableRAM.get(processId).put(address.getPage(),this.RAM.savePage(new Page(processId,address.getPage(),16/this.numberOfPages)));
                         this.RAM.getPage(this.pageTableRAM.get(processId).get(address.getPage())).saveValue(address.getOffset(),value);
                     } else{//the RAM is full
-                        int indexToReplace = this.getIndexToReplace();
-                        Page toSecStorage = this.RAM.replacePage(indexToReplace,new Page(processId,address.getPage(),16/this.numberOfPages));
+                        int indexToReplace = //use heuristic FIFO, RANDOM, ETC...
+                                this.getIndexToReplace();
+                        Page toSecStorage = //replace the page and get it for insert to sec storage
+                                this.RAM.replacePage(indexToReplace,new Page(processId,address.getPage(),16/this.numberOfPages));
+                        //update the two pageTables
                         this.pageTableRAM.get(processId).put(address.getPage(),indexToReplace);
                         this.pageTableRAM.get(toSecStorage.getProcessId()).remove(toSecStorage.getPageNumber());
-                        if(this.pageTableSec.get(toSecStorage.getProcessId()).containsKey(toSecStorage.getPageNumber())){
-                            this.secondStorage.replacePage(this.pageTableSec.get(toSecStorage.getProcessId()).get(toSecStorage.getPageNumber()),toSecStorage);
-                        }else{
-                            this.pageTableSec.get(toSecStorage.getProcessId()).put(toSecStorage.getPageNumber(),this.secondStorage.savePage(toSecStorage));
+                        //stores the value
+                        this.RAM.getPage(this.pageTableRAM.get(processId).get(address.getPage())).saveValue(address.getOffset(), value);
+                        //if the page replaced exists in secStorage then update it
+                        if (this.pageTableSec.get(toSecStorage.getProcessId()).containsKey(toSecStorage.getPageNumber())) {
+                            this.secondStorage.replacePage(this.pageTableSec.get(toSecStorage.getProcessId()).get(toSecStorage.getPageNumber()), toSecStorage);
+                        }
+                        // else, create it on secStorage and update the corresponding pageTable
+                        else {
+                            this.pageTableSec.get(toSecStorage.getProcessId()).put(toSecStorage.getPageNumber(), this.secondStorage.savePage(toSecStorage));
                         }
                     }
                 }
@@ -136,12 +163,19 @@ public class MemManager {
         }
     }
 
+    /**
+     *
+     * @param processId
+     * @param logicalAddress
+     * @return
+     */
     public synchronized int load(int processId,int logicalAddress) {
         try {
             this.checkProcess(processId);
             Pair<Integer, Integer> address = this.translateDecimalAddress(logicalAddress);//translate the address
             //if RAM constains the page, return the value
             if (this.pageTableRAM.get(processId).containsKey(address.getPage())) {
+                System.out.println("Is in RAM");
                 return this.RAM.getPage(this.pageTableRAM.get(processId).get(address.getPage())).getValue(address.getOffset());
             } else {
                 if(this.pageTableSec.get(processId).containsKey(address.getPage())){
@@ -156,6 +190,7 @@ public class MemManager {
                     }else{
                         this.pageTableSec.get(toSecStorage.getProcessId()).put(toSecStorage.getPageNumber(),this.secondStorage.savePage(toSecStorage));
                     }
+                    ++this.totalOfFaults;
                     return this.RAM.getPage(this.pageTableRAM.get(processId).get(address.getPage())).getValue(address.getOffset());
                 }else{
                     return 0;
@@ -165,6 +200,10 @@ public class MemManager {
             System.out.println("Error loading data");
             return 0;
         }
+    }
+
+    public int getTotalOfFaults(){
+        return this.totalOfFaults;
     }
 
     /**
@@ -185,12 +224,12 @@ public class MemManager {
 
         /**
          * The constructor
-         * @param k page
-         * @param v offset
+         * @param page page as a key
+         * @param offset offset as a value
          */
-        public Pair(K k, V v){
-            page = k;
-            offset = v;
+        public Pair(K page, V offset){
+            this.page = page;
+            this.offset = offset;
         }
 
         /**

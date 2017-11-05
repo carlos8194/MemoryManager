@@ -29,7 +29,7 @@ public class Memory {
     public Memory(int size){
         this.size = size;
         this.availableSpace = size;
-        this.memoryCells = new Hashtable<Integer, Page>();
+        this.memoryCells = new Hashtable<Integer, Page>(size);
     }
 
     /**
@@ -77,6 +77,6 @@ public class Memory {
      * @return the page of the index in this memory
      */
     public synchronized Page replacePage(int index,Page page){
-        return this.memoryCells.put(index,page);
+        return this.memoryCells.replace(index,page);
     }
 }
