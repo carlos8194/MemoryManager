@@ -1,6 +1,7 @@
 package Memory;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Random;
 
 /**
  * Created by carlos on 31/10/17.
@@ -86,11 +87,11 @@ public class MemManager {
     }
 
     /**
-     *
-     * @return
+     * Using an heuristic, returns the index of some page to replace
+     * @return the index of the page to replace
      */
     private int getIndexToReplace(){
-        return 1;
+        return new Random().nextInt(this.numberOfPages);
     }
 
     /**
