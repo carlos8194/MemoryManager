@@ -165,10 +165,10 @@ public class MemManager {
     }
 
     /**
-     *
-     * @param processId
-     * @param logicalAddress
-     * @return
+     * Allows to get a value from memory
+     * @param processId the process which call the function
+     * @param logicalAddress the logical address where is the value
+     * @return the number stored there, 0 is default
      */
     public synchronized int load(int processId,int logicalAddress) {
         try {
@@ -203,6 +203,10 @@ public class MemManager {
         }
     }
 
+    /**
+     * Returns the total of faults in memory
+     * @return the total of faults
+     */
     public int getTotalOfFaults(){
         return this.totalOfFaults;
     }
