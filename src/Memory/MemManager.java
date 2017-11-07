@@ -221,6 +221,13 @@ public class MemManager {
         return this.totalOfFaults;
     }
 
+    public void printContent(){
+        for (int i=0; i<this.numberOfPages; ++i){
+            System.out.println("Page number: " + this.RAM.getPage(i).getPageNumber()
+                    + ", associated to process: " + this.RAM.getPage(i).getProcessId());
+        }
+    }
+
     /**
      * This class allows handle pairs without javafx
      * @param <K> Key Class

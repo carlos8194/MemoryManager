@@ -202,5 +202,7 @@ public class Process implements Runnable {
         for (Instruction instruction: this.toExecute) {
             this.executeInstruction(instruction);
         }
+        System.out.println("Content in registers for process " + this.processId + ": "
+                + r1 +", "+ r2+", "+ r3);
     }
 }
