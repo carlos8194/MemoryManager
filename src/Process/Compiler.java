@@ -40,7 +40,7 @@ public class Compiler {
      * @param fileName: the path where the file will be searched for.
      * @return The instruction list of the assembly code.
      */
-    public List<Instruction> compile(String fileName) {
+    public synchronized List<Instruction> compile(String fileName) {
         List<String> fileLines = this.readFromFile(fileName);
         List<Instruction> instructionList = new ArrayList<>();
         Iterator<String> iterator = fileLines.iterator();

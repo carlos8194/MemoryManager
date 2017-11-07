@@ -87,11 +87,20 @@ public class MemManager {
     }
 
     /**
+     * To use the second heuristic, FIFO
+     */
+    private int last = 0;
+
+    /**
      * Using an heuristic, returns the index of some page to replace
      * @return the index of the page to replace
      */
     private int getIndexToReplace(){
+        //RANDOM heuristic
         return new Random().nextInt(this.numberOfPages);
+        //FIFO heuristic:
+        //int ret = this.last++;
+        //return ret%this.numberOfPages;
     }
 
     /**
@@ -143,6 +152,7 @@ public class MemManager {
                                 this.getIndexToReplace();
                         Page toSecStorage = //replace the page and get it for insert to sec storage
                                 this.RAM.replacePage(indexToReplace,new Page(processId,address.getPage(),16/this.numberOfPages));
+                        ++this.totalOfFaults;
                         //update the two pageTables
                         this.pageTableRAM.get(processId).put(address.getPage(),indexToReplace);
                         this.pageTableRAM.get(toSecStorage.getProcessId()).remove(toSecStorage.getPageNumber());
@@ -176,9 +186,9 @@ public class MemManager {
             Pair<Integer, Integer> address = this.translateDecimalAddress(logicalAddress);//translate the address
             //if RAM constains the page, return the value
             if (this.pageTableRAM.get(processId).containsKey(address.getPage())) {
-                System.out.println("Is in RAM");
                 return this.RAM.getPage(this.pageTableRAM.get(processId).get(address.getPage())).getValue(address.getOffset());
             } else {
+                //else, ask if the second storage has that
                 if(this.pageTableSec.get(processId).containsKey(address.getPage())){
                     //do swap here
                     int indexToReplace = this.getIndexToReplace(); //use heuristic FIFO, RANDOM, ETC...
