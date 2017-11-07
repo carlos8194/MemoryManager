@@ -48,14 +48,14 @@ public class MemManager {
      * The key is the unique identifier of the process
      * the value is the pageTable associated to this process
      */
-    private HashMap<Integer,Hashtable<Integer, Integer>> pageTableRAM;
+    private HashMap<Integer, Hashtable<Integer, Integer>> pageTableRAM;
 
     /**
      * To know the direction for all pages in sec memory
      * The key is the unique identifier of the process
      * the value is the pageTable associated to this process
      */
-    private HashMap<Integer,Hashtable<Integer, Integer>> pageTableSec;
+    private HashMap<Integer, Hashtable<Integer, Integer>> pageTableSec;
 
     /**
      * Function to translate a decimal address to the corresponding page and offset addresses
@@ -63,7 +63,7 @@ public class MemManager {
      * @param address the decimal address, value from 0 to 15
      * @return the corresponding page number and offset
      */
-    private Pair<Integer,Integer> translateDecimalAddress(int address){
+    private Pair<Integer, Integer> translateDecimalAddress(int address){
         switch (this.numberOfPages){
             case 2:
                 return new Pair<>((address/8),(address%8));
@@ -81,8 +81,8 @@ public class MemManager {
     private void checkProcess(int processId){
         if(!this.pageTableRAM.containsKey(processId)){
             //that means the process has never accessed the manager
-            this.pageTableRAM.put(processId,new Hashtable<>());
-            this.pageTableSec.put(processId,new Hashtable<>());
+            this.pageTableRAM.put(processId, new Hashtable<>());
+            this.pageTableSec.put(processId, new Hashtable<>());
         }
     }
 
@@ -100,7 +100,7 @@ public class MemManager {
      * @param logicalAddress the logical address where store the value
      * @param value the value to store
      */
-    public synchronized void store(int processId,int logicalAddress,int value){
+    public synchronized void store(int processId, int logicalAddress, int value){
         try{
             this.checkProcess(processId); //checks if the process is new to register it
             Pair<Integer,Integer> address = //get the corresponding page and offset, using the configuration
@@ -170,7 +170,7 @@ public class MemManager {
      * @param logicalAddress the logical address where is the value
      * @return the number stored there, 0 is default
      */
-    public synchronized int load(int processId,int logicalAddress) {
+    public synchronized int load(int processId, int logicalAddress) {
         try {
             this.checkProcess(processId);
             Pair<Integer, Integer> address = this.translateDecimalAddress(logicalAddress);//translate the address

@@ -170,11 +170,27 @@ public class Process implements Runnable {
                 }
                 break;
             case STORE:
-                // Falta
+                int value;
+                switch (origin){
+                    case 1: value = r1;
+                        break;
+                    case 2: value = r2;
+                        break;
+                    default:value = r3;
+                        break;
+                }
+                manager.store(processId, destiny, value);
                 break;
-
             case LOAD:
-                // Falta
+                int result = manager.load(processId, origin);
+                switch (destiny){
+                    case 1: r1 = result;
+                    break;
+                    case 2: r2 = result;
+                    break;
+                    default:r3 = result;
+                    break;
+                }
                 break;
         }
     }
